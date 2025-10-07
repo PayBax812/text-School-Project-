@@ -1,0 +1,712 @@
+Core Modules for "AnnganWadi" School Management System
+1. Authentication & Authorization
+
+User login/logout
+
+Role-based access (Admin, Teacher, Worker, Parent)
+
+JWT/Session management
+
+2. User Management
+
+CRUD for different user roles:
+
+Admin
+
+Teacher
+
+Anganwadi Worker
+
+Parent/Guardian
+
+Profile management
+
+3. Student Management
+
+Enroll new children
+
+Update student profiles
+
+View student list
+
+Assign students to classes
+
+4. Attendance Management
+
+Daily student attendance
+
+Staff attendance
+
+Generate attendance reports
+
+5. Class & Section Management
+
+Create/update/delete classes (e.g., Nursery, LKG, UKG)
+
+Assign teachers to classes
+
+Allocate students to sections
+
+6. Nutrition & Meal Management
+
+Daily meal schedule
+
+Track meal distribution
+
+Nutrition monitoring per child
+
+7. Health Records Management
+
+Medical checkup records
+
+Immunization tracking
+
+Health status reports
+
+8. Parent Communication
+
+Announcements
+
+Notifications (SMS/Email)
+
+Feedback from parents
+
+9. Activity & Event Management
+
+Schedule and manage events (festivals, cultural programs)
+
+Track participation
+
+Event gallery uploads
+
+10. Reports & Analytics
+
+Student progress reports
+
+Attendance summary
+
+Nutrition and health reports
+
+Staff performance metrics
+
+11. Inventory Management (Optional)
+
+Track items like books, toys, medical kits, nutrition supplies
+
+Stock management
+
+12. Fee Management (Optional for Anganwadi)
+
+Track donations or funds (if applicable)
+
+Expense management
+
+Structure for School Project
+AnnganWadi/
+├── src/
+│   ├── main/
+│   │   ├── java/
+│   │   │   └── com/annganwadi/
+│   │   │       ├── controller/
+│   │   │       ├── service/
+│   │   │       ├── repository/
+│   │   │       ├── model/
+│   │   │       └── security/
+│   │   └── resources/
+│   │       ├── application.properties
+│   │       └── static/
+│   └── test/
+├── pom.xml (if Maven) / build.gradle (if Gradle)
+└── README.md
+
+Codes(SpringBoot)
+
+1. 🔐 Authentication & Authorization
+SecurityConfig.java
+@Configuration
+@EnableWebSecurity
+public class SecurityConfig extends WebSecurityConfigurerAdapter {
+    @Autowired private UserDetailsService userDetailsService;
+
+    @Override
+    protected void configure(AuthenticationManagerBuilder auth) throws Exception {
+        auth.userDetailsService(userDetailsService)
+            .passwordEncoder(new BCryptPasswordEncoder());
+    }
+
+    @Override
+    protected void configure(HttpSecurity http) throws Exception {
+        http.csrf().disable()
+            .authorizeRequests()
+            .antMatchers("/auth/**").permitAll()
+            .anyRequest().authenticated();
+    }
+
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
+}
+
+AuthController.java
+@RestController
+@RequestMapping("/auth")
+public class AuthController {
+    @Autowired private AuthenticationManager authManager;
+
+    @PostMapping("/login")
+    public ResponseEntity<?> login(@RequestBody AuthRequest request) {
+        Authentication auth = authManager.authenticate(
+            new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword()));
+        return ResponseEntity.ok("Login successful");
+    }
+}
+
+AuthRequest.java
+@Data
+public class AuthRequest {
+    private String username;
+    private String password;
+}
+
+2. 👤 User Management
+User.java
+@Entity
+public class User {
+    @Id @GeneratedValue private Long id;
+    private String username;
+    private String password;
+    private String role;
+}
+
+UserRepository.java
+public interface UserRepository extends JpaRepository<User, Long> {
+    Optional<User> findByUsername(String username);
+}
+
+UserService.java
+@Service
+public class UserService {
+    @Autowired private UserRepository userRepository;
+
+    public User createUser(User user) {
+        user.setPassword(new BCryptPasswordEncoder().encode(user.getPassword()));
+        return userRepository.save(user);
+    }
+}
+
+UserController.java
+@RestController
+@RequestMapping("/users")
+public class UserController {
+    @Autowired private UserService userService;
+
+    @PostMapping
+    public ResponseEntity<User> create(@RequestBody User user) {
+        return ResponseEntity.ok(userService.createUser(user));
+    }
+}
+
+3. 🎒 Student Management
+Student.java
+@Entity
+public class Student {
+    @Id @GeneratedValue private Long id;
+    private String name;
+    private LocalDate dob;
+    private String gender;
+}
+
+StudentRepository.java
+public interface StudentRepository extends JpaRepository<Student, Long> {}
+
+StudentService.java
+@Service
+public class StudentService {
+    @Autowired private StudentRepository studentRepo;
+
+    public Student addStudent(Student student) {
+        return studentRepo.save(student);
+    }
+
+    public List<Student> getAll() {
+        return studentRepo.findAll();
+    }
+}
+
+StudentController.java
+@RestController
+@RequestMapping("/students")
+public class StudentController {
+    @Autowired private StudentService service;
+
+    @PostMapping
+    public Student create(@RequestBody Student s) {
+        return service.addStudent(s);
+    }
+
+    @GetMapping
+    public List<Student> list() {
+        return service.getAll();
+    }
+}
+
+4. 🗓️ Attendance Management
+Attendance.java
+@Entity
+public class Attendance {
+    @Id @GeneratedValue private Long id;
+    private Long studentId;
+    private LocalDate date;
+    private boolean present;
+}
+
+AttendanceRepository.java
+public interface AttendanceRepository extends JpaRepository<Attendance, Long> {
+    List<Attendance> findByStudentId(Long studentId);
+}
+
+AttendanceController.java
+@RestController
+@RequestMapping("/attendance")
+public class AttendanceController {
+    @Autowired private AttendanceRepository repo;
+
+    @PostMapping
+    public Attendance mark(@RequestBody Attendance attendance) {
+        return repo.save(attendance);
+    }
+
+    @GetMapping("/{studentId}")
+    public List<Attendance> get(@PathVariable Long studentId) {
+        return repo.findByStudentId(studentId);
+    }
+}
+
+5. 📊 Reports & Analytics
+ReportController.java
+@RestController
+@RequestMapping("/reports")
+public class ReportController {
+    @Autowired private AttendanceRepository attendanceRepo;
+    @Autowired private StudentRepository studentRepo;
+
+    @GetMapping("/attendance-summary")
+    public Map<String, Long> getAttendanceSummary() {
+        List<Attendance> all = attendanceRepo.findAll();
+        long presentCount = all.stream().filter(Attendance::isPresent).count();
+        long total = all.size();
+        return Map.of("present", presentCount, "total", total);
+    }
+}
+
+6. ✍️ Exam Management (New Module)
+Exam.java
+@Entity
+public class Exam {
+    @Id @GeneratedValue private Long id;
+    private String subject;
+    private LocalDate date;
+    private Long studentId;
+    private int marks;
+}
+
+ExamRepository.java
+public interface ExamRepository extends JpaRepository<Exam, Long> {
+    List<Exam> findByStudentId(Long studentId);
+}
+
+ExamController.java
+@RestController
+@RequestMapping("/exams")
+public class ExamController {
+    @Autowired private ExamRepository repo;
+
+    @PostMapping
+    public Exam addExam(@RequestBody Exam exam) {
+        return repo.save(exam);
+    }
+
+    @GetMapping("/student/{id}")
+    public List<Exam> getExams(@PathVariable Long id) {
+        return repo.findByStudentId(id);
+    }
+}
+
+
+1. Admin Page
+Admin Responsibilities (Typical Controls)
+
+Manage Users (Add/Edit/Delete)
+
+View Reports
+
+Manage Classes (Optional)
+
+Manage Exams
+
+View Attendance Summary
+
+1. AdminController.java
+@RestController
+@RequestMapping("/admin")
+@PreAuthorize("hasRole('ADMIN')") // Only users with ADMIN role can access
+public class AdminController {
+
+    @Autowired private UserService userService;
+    @Autowired private ReportService reportService;
+    @Autowired private ExamService examService;
+
+    // Create new user (admin, teacher, worker, etc.)
+    @PostMapping("/users")
+    public ResponseEntity<User> createUser(@Valid @RequestBody UserDTO userDTO) {
+        User user = userService.createUserFromDTO(userDTO);
+        return ResponseEntity.ok(user);
+    }
+
+    // List all users
+    @GetMapping("/users")
+    public List<User> listUsers() {
+        return userService.getAllUsers();
+    }
+
+    // Delete a user by ID
+    @DeleteMapping("/users/{id}")
+    public ResponseEntity<?> deleteUser(@PathVariable Long id) {
+        userService.deleteUser(id);
+        return ResponseEntity.ok("User deleted");
+    }
+
+    // View attendance summary report
+    @GetMapping("/reports/attendance")
+    public Map<String, Long> attendanceReport() {
+        return reportService.getAttendanceSummary();
+    }
+
+    // View all exams
+    @GetMapping("/exams")
+    public List<Exam> getAllExams() {
+        return examService.getAllExams();
+    }
+
+    // Additional admin endpoints can be added here
+}
+
+2. UserService.java (Relevant admin functions)
+@Service
+public class UserService {
+    @Autowired private UserRepository userRepo;
+    @Autowired private PasswordEncoder passwordEncoder;
+
+    public User createUserFromDTO(UserDTO dto) {
+        User user = new User();
+        user.setUsername(dto.getUsername());
+        user.setPassword(passwordEncoder.encode(dto.getPassword()));
+        user.setRole(dto.getRole());
+        return userRepo.save(user);
+    }
+
+    public List<User> getAllUsers() {
+        return userRepo.findAll();
+    }
+
+    public void deleteUser(Long id) {
+        userRepo.deleteById(id);
+    }
+}
+
+3. ReportService.java
+@Service
+public class ReportService {
+    @Autowired private AttendanceRepository attendanceRepo;
+
+    public Map<String, Long> getAttendanceSummary() {
+        List<Attendance> all = attendanceRepo.findAll();
+        long presentCount = all.stream().filter(Attendance::isPresent).count();
+        long total = all.size();
+        return Map.of("present", presentCount, "total", total);
+    }
+}
+
+4. ExamService.java
+@Service
+public class ExamService {
+    @Autowired private ExamRepository examRepo;
+
+    public List<Exam> getAllExams() {
+        return examRepo.findAll();
+    }
+}
+
+5. Security
+
+Make sure your User entity supports roles and your Spring Security config restricts /admin/** to admins only.
+
+Example role setup in User entity:
+
+private String role;  // Example values: "ADMIN", "TEACHER", "WORKER"
+
+6. Sample UserDTO
+@Data
+public class UserDTO {
+    @NotBlank
+    private String username;
+
+    @NotBlank
+    private String password;
+
+    @NotBlank
+    private String role;
+}
+
+2. Student and teacher Login
+
+1. StudentLoginController.java
+@RestController
+@RequestMapping("/auth/student")
+public class StudentLoginController {
+
+    @Autowired
+    private AuthenticationManager authenticationManager;
+
+    @PostMapping("/login")
+    public ResponseEntity<String> login(@RequestBody AuthRequest request) {
+        try {
+            Authentication auth = authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword()));
+
+            // Check if user has STUDENT role
+            User user = (User) auth.getPrincipal();
+            if (!user.getRole().equalsIgnoreCase("STUDENT")) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Not authorized as student");
+            }
+
+            // Return success or token (add JWT generation if needed)
+            return ResponseEntity.ok("Student login successful");
+
+        } catch (AuthenticationException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid credentials");
+        }
+    }
+}
+
+2. TeacherLoginController.java
+@RestController
+@RequestMapping("/auth/teacher")
+public class TeacherLoginController {
+
+    @Autowired
+    private AuthenticationManager authenticationManager;
+
+    @PostMapping("/login")
+    public ResponseEntity<String> login(@RequestBody AuthRequest request) {
+        try {
+            Authentication auth = authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword()));
+
+            // Check if user has TEACHER role
+            User user = (User) auth.getPrincipal();
+            if (!user.getRole().equalsIgnoreCase("TEACHER")) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Not authorized as teacher");
+            }
+
+            // Return success or token (add JWT generation if needed)
+            return ResponseEntity.ok("Teacher login successful");
+
+        } catch (AuthenticationException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid credentials");
+        }
+    }
+}
+
+3. AuthRequest.java (shared)
+@Data
+public class AuthRequest {
+    private String username;
+    private String password;
+}
+
+A ROUGH GO THROUGH OF SCHOOL PROJECT
+
+===========================
+AnnganWadi Spring Boot Project
+Full Setup & Run Instructions
+===========================
+
+1. Project Folder Structure
+---------------------------
+
+Create your project folder, e.g., "annganwadi" and organize files like this:
+
+annganwadi/
+├── src/
+│   ├── main/
+│   │   ├── java/
+│   │   │   └── com/yourcompany/annganwadi/
+│   │   │       ├── controller/         # REST controllers (AdminController, StudentLoginController, TeacherLoginController, etc.)
+│   │   │       ├── service/            # Service classes (UserService, ReportService, ExamService, etc.)
+│   │   │       ├── model/              # Entity classes (User, Student, Exam, etc.)
+│   │   │       ├── dto/                # DTOs (UserDTO, AuthRequest, etc.)
+│   │   │       ├── repository/         # JPA Repositories
+│   │   │       └── AnnganwadiApplication.java  # Main Spring Boot Application
+│   │   └── resources/
+│   │       ├── application.properties  # Configuration file
+│   │       └── static/                  # Optional static resources
+│   └── test/
+│       └── java/                       # Unit tests
+
+├── pom.xml                            # Maven build file and dependencies
+├── README.md                         # (Optional) Project overview and instructions
+└── run.sh                           # (Optional) Shell script to build and run the app
+
+
+2. Storing Your Code
+--------------------
+
+- Java source files go under `src/main/java/com/yourcompany/annganwadi/` in the respective package folders.
+- Put `application.properties` in `src/main/resources/`.
+- Test classes go under `src/test/java/com/yourcompany/annganwadi/`.
+- Manage dependencies in `pom.xml`.
+
+Example:
+
+- `src/main/java/com/yourcompany/annganwadi/controller/AdminController.java`
+- `src/main/resources/application.properties`
+
+---
+
+3. Configure your Database
+--------------------------
+
+Edit `src/main/resources/application.properties`:
+
+For **H2 (in-memory DB)** (good for testing):
+
+spring.datasource.url=jdbc:h2:mem:annganwadi;DB_CLOSE_DELAY=-1  
+spring.datasource.driverClassName=org.h2.Driver  
+spring.datasource.username=sa  
+spring.datasource.password=  
+spring.jpa.hibernate.ddl-auto=update  
+spring.h2.console.enabled=true  
+spring.h2.console.path=/h2-console  
+
+For **MySQL** (replace username/password/dbname as needed):
+
+spring.datasource.url=jdbc:mysql://localhost:3306/annganwadi_db?useSSL=false&serverTimezone=UTC  
+spring.datasource.username=root  
+spring.datasource.password=yourpassword  
+spring.jpa.hibernate.ddl-auto=update  
+spring.jpa.show-sql=true  
+spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.MySQL8Dialect  
+
+Make sure your MySQL server is running and the database `annganwadi_db` exists.
+
+---
+
+4. Build the Project
+--------------------
+
+From the project root folder (where `pom.xml` lives), open a terminal and run:
+
+mvn clean install
+
+This command compiles, tests, and packages your project.
+
+---
+
+5. Run the Application
+----------------------
+
+Option 1: Run using Maven:
+
+mvn spring-boot:run
+
+Option 2: Open your IDE (IntelliJ/Eclipse), find the main class annotated with `@SpringBootApplication` (e.g., `AnnganwadiApplication.java`) and run it.
+
+---
+
+6. Accessing the Application
+----------------------------
+
+- App runs by default at: http://localhost:8080/  
+- If using H2 database, access H2 console at: http://localhost:8080/h2-console  
+  Use JDBC URL: jdbc:h2:mem:annganwadi  
+
+- If Swagger UI is enabled (for API docs), visit:  
+  http://localhost:8080/swagger-ui.html
+
+---
+
+7. Testing the APIs
+-------------------
+
+Use Postman or curl to test endpoints, for example:
+
+Student Login:
+
+curl -X POST http://localhost:8080/auth/student/login \
+-H "Content-Type: application/json" \
+-d '{"username":"student1","password":"pass123"}'
+
+List all users (admin only):
+
+curl http://localhost:8080/admin/users
+
+Make sure to add any needed authentication tokens/headers.
+
+---
+
+8. Optional: Run Script (Linux / Mac)
+-------------------------------------
+
+Create a file `run.sh` in your project root with the following content:
+
+#!/bin/bash
+
+echo "Building the AnnganWadi project..."  
+mvn clean install  
+
+if [ $? -eq 0 ]; then  
+  echo "Build successful. Starting the application..."  
+  mvn spring-boot:run  
+else  
+  echo "Build failed. Please fix the errors and try again."  
+fi
+
+Give execute permission:
+
+chmod +x run.sh
+
+Run it by:
+
+./run.sh
+
+---
+
+9. Troubleshooting
+------------------
+
+- Ensure Java JDK and Maven are installed and properly set in your system PATH.  
+- Change server port if 8080 is busy by adding to `application.properties`:
+
+server.port=9090
+
+- Check console logs for errors if the app doesn’t start.  
+- Run `mvn clean install` again if builds fail.
+
+---
+
+10. Integrating Frontend or Mobile Apps
+---------------------------------------
+
+Your frontend or mobile app should call the backend APIs at http://localhost:8080/ (or your chosen host and port).
+
+Make sure backend CORS is configured properly to allow requests from frontend URLs.
+
+---
+
+Happy coding with AnnganWadi!
+
+If you want help setting up Docker, frontend samples, or further features, just ask!
+	
+
