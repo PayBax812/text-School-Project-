@@ -709,4 +709,131 @@ Happy coding with AnnganWadi!
 
 If you want help setting up Docker, frontend samples, or further features, just ask!
 	
+________________________________________________________________________________________
+
+
+NEW
+
+
+school-management-system/
+ ├── src/
+ │   └── main/
+ │       ├── java/
+ │       │   └── com/schoolmanagement/
+ │       │        ├── SchoolManagementApplication.java
+ │       │        ├── entity/
+ │       │        ├── repository/
+ │       │        ├── service/
+ │       │        └── controller/
+ │       └── resources/
+ │            ├── templates/
+ │            │    ├── index.html
+ │            │    ├── students.html
+ │            │    ├── teachers.html
+ │            │    └── classes.html
+ │            ├── static/
+ │            └── application.properties
+ └── pom.xml
+
+
+FRONT END PART
+
+Insert files in the following places:
+🧱 Entities → src/main/java/com/schoolmanagement/entity/
+
+Student.java
+
+Teacher.java
+
+ClassRoom.java
+
+Subject.java
+
+Exam.java
+
+Marks.java
+
+Attendance.java
+
+📚 Repositories → src/main/java/com/schoolmanagement/repository/
+
+StudentRepository.java
+
+TeacherRepository.java
+
+ClassRoomRepository.java
+
+SubjectRepository.java
+
+ExamRepository.java
+
+MarksRepository.java
+
+AttendanceRepository.java
+
+⚙️ Services → src/main/java/com/schoolmanagement/service/
+
+StudentService.java
+
+TeacherService.java
+
+ClassRoomService.java
+
+SubjectService.java
+
+ExamService.java
+
+MarksService.java
+
+AttendanceService.java
+
+🌐 Controllers → src/main/java/com/schoolmanagement/controller/
+
+For backend REST: StudentController.java, etc.
+
+For frontend view (Thymeleaf):
+
+StudentViewController.java
+
+TeacherViewController.java
+
+ClassViewController.java
+
+🎨 Templates (UI) → src/main/resources/templates/
+
+index.html
+
+students.html
+
+teachers.html
+
+classes.html
+
+⚙️ Config → src/main/resources/application.properties
+spring.datasource.url=jdbc:mysql://localhost:3306/schooldb
+spring.datasource.username=root
+spring.datasource.password=1234
+spring.jpa.hibernate.ddl-auto=update
+spring.jpa.show-sql=true
+spring.thymeleaf.cache=false
+server.port=8080
+
+🧠 4️⃣ Run Commands
+
+Create MySQL Database:
+
+CREATE DATABASE schooldb;
+
+
+Run Spring Boot App:
+
+mvn spring-boot:run
+
+
+Open Browser:
+
+http://localhost:8080/
+
+
+
 
