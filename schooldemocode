@@ -1,0 +1,599 @@
+📁 Package Structure
+com.example.school/
+├── controller/
+│   ├── AdminController.java
+│   ├── TeacherController.java
+│   └── StudentController.java
+├── model/
+│   ├── Admin.java
+│   ├── Employee.java
+│   ├── Teacher.java
+│   ├── Student.java
+│   └── ExamResult.java
+├── service/
+│   ├── AdminService.java
+│   ├── TeacherService.java
+│   └── StudentService.java
+├── dto/
+│   └── LoginRequest.java
+└── SchoolManagementApplication.java
+
+✅ Start with Model Classes
+1. Admin.java
+package com.example.school.model;
+
+public class Admin {
+    private String username;
+    private String password;
+
+    public Admin() {}
+    public Admin(String username, String password) {
+        this.username = username;
+        this.password = password;
+    }
+
+    // Getters and Setters
+}
+
+2. Employee.java
+package com.example.school.model;
+
+public class Employee {
+    private int id;
+    private String name;
+    private String role; // e.g. "Teacher", "Staff"
+
+    public Employee() {}
+    public Employee(int id, String name, String role) {
+        this.id = id;
+        this.name = name;
+        this.role = role;
+    }
+
+    // Getters and Setters
+}
+
+3. Teacher.java
+package com.example.school.model;
+
+public class Teacher {
+    private int id;
+    private String name;
+    private String subject;
+    private String password;
+
+    public Teacher() {}
+    public Teacher(int id, String name, String subject, String password) {
+        this.id = id;
+        this.name = name;
+        this.subject = subject;
+        this.password = password;
+    }
+
+    // Getters and Setters
+}
+
+4. Student.java
+package com.example.school.model;
+
+import java.util.HashMap;
+import java.util.Map;
+
+public class Student {
+    private int id;
+    private String name;
+    private String grade;
+    private String password;
+    private Map<String, Boolean> attendance = new HashMap<>();
+    private Map<String, String> exams = new HashMap<>();
+
+    public Student() {}
+    public Student(int id, String name, String grade, String password) {
+        this.id = id;
+        this.name = name;
+        this.grade = grade;
+        this.password = password;
+    }
+
+    // Getters and Setters
+}
+
+5. ExamResult.java (Optional DTO)
+package com.example.school.model;
+
+public class ExamResult {
+    private int studentId;
+    private String subject;
+    private String grade;
+
+    // Constructors, Getters, Setters
+}
+
+new Exam.java in Model
+
+package com.example.school.model;
+
+public class Exam {
+    private String subject;
+    private String date; // Could use LocalDate for better type safety
+    private String result; // Optional, could be score or pass/fail
+
+    public Exam() {}
+
+    public Exam(String subject, String date, String result) {
+        this.subject = subject;
+        this.date = date;
+        this.result = result;
+    }
+
+    // Getters and Setters
+    public String getSubject() {
+        return subject;
+    }
+
+    public void setSubject(String subject) {
+        this.subject = subject;
+    }
+
+    public String getDate() {
+        return date;
+    }
+
+    public void setDate(String date) {
+        this.date = date;
+    }
+
+    public String getResult() {
+        return result;
+    }
+
+    public void setResult(String result) {
+        this.result = result;
+    }
+
+    @Override
+    public String toString() {
+        return "Exam{subject='" + subject + "', date='" + date + "', result='" + result + "'}";
+    }
+}
+
+Attendance.java in Model
+
+package com.example.school.model;
+
+public class Attendance {
+    private String date;     // Consider using LocalDate for real apps
+    private boolean present;
+
+    public Attendance() {}
+
+    public Attendance(String date, boolean present) {
+        this.date = date;
+        this.present = present;
+    }
+
+    // Getters and Setters
+    public String getDate() {
+        return date;
+    }
+
+    public void setDate(String date) {
+        this.date = date;
+    }
+
+    public boolean isPresent() {
+        return present;
+    }
+
+    public void setPresent(boolean present) {
+        this.present = present;
+    }
+
+    @Override
+    public String toString() {
+        return "Attendance{date='" + date + "', present=" + present + "}";
+    }
+}
+
+
+
+✅ DTO
+LoginRequest.java
+package com.example.school.dto;
+
+public class LoginRequest {
+    private String username;
+    private String password;
+
+    public LoginRequest() {}
+
+    public LoginRequest(String username, String password) {
+        this.username = username;
+        this.password = password;
+    }
+
+    // Getters and Setters
+}
+
+✅ Services (Example: AdminService.java)
+AdminService.java
+package com.example.school.service;
+
+import com.example.school.model.Admin;
+import com.example.school.model.Employee;
+import com.example.school.model.Student;
+import org.springframework.stereotype.Service;
+
+import java.util.*;
+
+@Service
+public class AdminService {
+    private final Admin admin = new Admin("admin", "admin123");
+    private final Map<Integer, Employee> employees = new HashMap<>();
+    private final Map<Integer, Student> students = new HashMap<>();
+    private int empId = 1;
+    private int studentId = 1;
+
+    public boolean login(String username, String password) {
+        return admin.getUsername().equals(username) && admin.getPassword().equals(password);
+    }
+
+    public Employee addEmployee(Employee e) {
+        e.setId(empId++);
+        employees.put(e.getId(), e);
+        return e;
+    }
+
+    public Student addStudent(Student s) {
+        s.setId(studentId++);
+        students.put(s.getId(), s);
+        return s;
+    }
+
+    public Collection<Employee> getAllEmployees() {
+        return employees.values();
+    }
+
+    public Collection<Student> getAllStudents() {
+        return students.values();
+    }
+
+    public Map<Integer, Student> getStudentMap() {
+        return students;
+    }
+}
+
+
+TeacherService 
+
+package com.example.school.service;
+
+import com.example.school.model.Teacher;
+import com.example.school.model.Exam;
+import com.example.school.model.Attendance;
+import org.springframework.stereotype.Service;
+
+import java.util.*;
+
+@Service
+public class TeacherService {
+    private final Map<Integer, Teacher> teachers = new HashMap<>();
+    private final Map<Integer, List<Exam>> examsByTeacher = new HashMap<>();
+    private final Map<Integer, List<Attendance>> attendanceByTeacher = new HashMap<>();
+    private int teacherId = 1;
+
+    public Teacher addTeacher(Teacher t) {
+        t.setId(teacherId++);
+        teachers.put(t.getId(), t);
+        return t;
+    }
+
+    public boolean login(String username, String password) {
+        return teachers.values().stream()
+            .anyMatch(t -> t.getUsername().equals(username) && t.getPassword().equals(password));
+    }
+
+    public String getDashboard(int teacherId) {
+        return "Welcome Teacher: " + teachers.get(teacherId).getName();
+    }
+
+    public Exam takeExam(int teacherId, Exam exam) {
+        examsByTeacher.computeIfAbsent(teacherId, k -> new ArrayList<>()).add(exam);
+        return exam;
+    }
+
+    public Attendance takeAttendance(int teacherId, Attendance attendance) {
+        attendanceByTeacher.computeIfAbsent(teacherId, k -> new ArrayList<>()).add(attendance);
+        return attendance;
+    }
+
+    public List<Exam> getExams(int teacherId) {
+        return examsByTeacher.getOrDefault(teacherId, Collections.emptyList());
+    }
+
+    public List<Attendance> getAttendanceRecords(int teacherId) {
+        return attendanceByTeacher.getOrDefault(teacherId, Collections.emptyList());
+    }
+}
+
+
+StudentService
+
+package com.example.school.service;
+
+import com.example.school.model.Student;
+import com.example.school.model.Exam;
+import com.example.school.model.Attendance;
+import org.springframework.stereotype.Service;
+
+import java.util.*;
+
+@Service
+public class StudentService {
+    private final Map<Integer, Student> students = new HashMap<>();
+    private final Map<Integer, List<Exam>> examsByStudent = new HashMap<>();
+    private final Map<Integer, List<Attendance>> attendanceByStudent = new HashMap<>();
+    private int studentId = 1;
+
+    public Student addStudent(Student s) {
+        s.setId(studentId++);
+        students.put(s.getId(), s);
+        return s;
+    }
+
+    public boolean login(String username, String password) {
+        return students.values().stream()
+            .anyMatch(s -> s.getUsername().equals(username) && s.getPassword().equals(password));
+    }
+
+    public String getDashboard(int studentId) {
+        return "Welcome Student: " + students.get(studentId).getName();
+    }
+
+    public Exam giveExam(int studentId, Exam exam) {
+        examsByStudent.computeIfAbsent(studentId, k -> new ArrayList<>()).add(exam);
+        return exam;
+    }
+
+    public List<Attendance> getAttendanceReport(int studentId) {
+        return attendanceByStudent.getOrDefault(studentId, Collections.emptyList());
+    }
+
+    // For recording attendance by external (e.g., teacher), not student
+    public void recordAttendance(int studentId, Attendance attendance) {
+        attendanceByStudent.computeIfAbsent(studentId, k -> new ArrayList<>()).add(attendance);
+    }
+
+    public List<Exam> getExamHistory(int studentId) {
+        return examsByStudent.getOrDefault(studentId, Collections.emptyList());
+    }
+}
+
+
+
+✅ Controllers (Example: AdminController.java)
+AdminController.java
+package com.example.school.controller;
+
+import com.example.school.dto.LoginRequest;
+import com.example.school.model.Employee;
+import com.example.school.model.Student;
+import com.example.school.service.AdminService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.Collection;
+
+@RestController
+@RequestMapping("/admin")
+public class AdminController {
+
+    @Autowired
+    private AdminService adminService;
+
+    @PostMapping("/login")
+    public String login(@RequestBody LoginRequest login) {
+        return adminService.login(login.getUsername(), login.getPassword())
+                ? "Login successful"
+                : "Invalid credentials";
+    }
+
+    @PostMapping("/add-employee")
+    public Employee addEmployee(@RequestBody Employee employee) {
+        return adminService.addEmployee(employee);
+    }
+
+    @PostMapping("/add-student")
+    public Student addStudent(@RequestBody Student student) {
+        return adminService.addStudent(student);
+    }
+
+    @GetMapping("/employees")
+    public Collection<Employee> getEmployees() {
+        return adminService.getAllEmployees();
+    }
+
+    @GetMapping("/students")
+    public Collection<Student> getStudents() {
+        return adminService.getAllStudents();
+    }
+}
+
+
+1. TeacherController.java
+package com.example.school.controller;
+
+import com.example.school.dto.LoginRequest;
+import com.example.school.model.Student;
+import com.example.school.service.AdminService;
+import com.example.school.service.TeacherService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.Map;
+
+@RestController
+@RequestMapping("/teacher")
+public class TeacherController {
+
+    @Autowired
+    private TeacherService teacherService;
+
+    @Autowired
+    private AdminService adminService; // to access student data
+
+    // Teacher login
+    @PostMapping("/login")
+    public String login(@RequestBody LoginRequest login) {
+        boolean success = teacherService.login(login.getUsername(), login.getPassword());
+        return success ? "Teacher login successful" : "Invalid credentials";
+    }
+
+    // Add attendance for a student on a given date
+    @PostMapping("/attendance/{studentId}")
+    public String addAttendance(@PathVariable int studentId, 
+                                @RequestParam String date, 
+                                @RequestParam boolean present) {
+        Student student = adminService.getStudentMap().get(studentId);
+        if (student == null) {
+            return "Student not found";
+        }
+        teacherService.addAttendance(student, date, present);
+        return "Attendance recorded";
+    }
+
+    // Post exam result for a student
+    @PostMapping("/exam-result/{studentId}")
+    public String postExamResult(@PathVariable int studentId,
+                                 @RequestParam String subject,
+                                 @RequestParam String grade) {
+        Student student = adminService.getStudentMap().get(studentId);
+        if (student == null) {
+            return "Student not found";
+        }
+        teacherService.postExamResult(student, subject, grade);
+        return "Exam result posted";
+    }
+}
+
+
+3. StudentController.java
+package com.example.school.controller;
+
+import com.example.school.dto.LoginRequest;
+import com.example.school.model.Student;
+import com.example.school.service.AdminService;
+import com.example.school.service.StudentService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.Map;
+
+@RestController
+@RequestMapping("/student")
+public class StudentController {
+
+    @Autowired
+    private StudentService studentService;
+
+    @Autowired
+    private AdminService adminService; // to access students data
+
+    // Student login
+    @PostMapping("/login")
+    public String login(@RequestBody LoginRequest login) {
+        boolean success = studentService.login(login.getUsername(), login.getPassword());
+        return success ? "Student login successful" : "Invalid credentials";
+    }
+
+    // Student dashboard: returns basic info + attendance summary
+    @GetMapping("/dashboard/{studentId}")
+    public Object dashboard(@PathVariable int studentId) {
+        Student student = adminService.getStudentMap().get(studentId);
+        if (student == null) {
+            return "Student not found";
+        }
+        // Return student name, grade, attendance summary (total days, present days)
+        Map<String, Boolean> attendance = student.getAttendance();
+        long presentDays = attendance.values().stream().filter(Boolean::booleanValue).count();
+        long totalDays = attendance.size();
+
+        return Map.of(
+                "name", student.getName(),
+                "grade", student.getGrade(),
+                "attendancePresentDays", presentDays,
+                "attendanceTotalDays", totalDays
+        );
+    }
+
+    // View exam results for student
+    @GetMapping("/exams/{studentId}")
+    public Object viewExams(@PathVariable int studentId) {
+        Student student = adminService.getStudentMap().get(studentId);
+        if (student == null) {
+            return "Student not found";
+        }
+        return student.getExams();
+    }
+}
+
+4. StudentService.java
+package com.example.school.service;
+
+import com.example.school.model.Student;
+import org.springframework.stereotype.Service;
+
+import java.util.HashMap;
+import java.util.Map;
+
+@Service
+public class StudentService {
+
+    // For demo, maintain a username->student mapping
+    private Map<String, Student> studentUsernameMap = new HashMap<>();
+
+    public StudentService() {
+        // sample student for login (username = student1, password = pass123)
+        Student s = new Student(1, "Alice", "5", "pass123");
+        studentUsernameMap.put("student1", s);
+    }
+
+    public boolean login(String username, String password) {
+        Student student = studentUsernameMap.get(username);
+        return student != null && student.getPassword().equals(password);
+    }
+}
+
+TEST FOLDER
+
+src/test/java/com/example/school/service
+
+package com.example.school.service;
+
+import com.example.school.model.Student;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class StudentServiceTest {
+
+    @Test
+    public void testLoginSuccess() {
+        StudentService studentService = new StudentService();
+        boolean result = studentService.login("student1", "pass123");
+        assertTrue(result);
+    }
+
+    @Test
+    public void testLoginFail() {
+        StudentService studentService = new StudentService();
+        boolean result = studentService.login("student1", "wrongpass");
+        assertFalse(result);
+    }
+}
+
+
+
+
+
+
